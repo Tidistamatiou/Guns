@@ -5,17 +5,16 @@ import numpy as np
 
 
 def main():
-    dtypes = {'city_or_county': object, 'participant_age': object, 'participant_gender' = object, 'participant_status' = object, 'participant_type' = object}
+    dtypes = {'city_or_county': object, 'participant_age': object, 'participant_gender' : object, 'participant_status' : object, 'participant_type' : object}
     df = pd.read_csv('guns.csv')
     ndf = pd.read_csv('stripped2_guns.csv', dtype = dtypes)
-    ndf.drop(columns = "")
+    remove(ndf)
     # sufficient_data(ndf, "state")
-    # remove(df)
     # string_to_int(ndf, "city_or_county")
     # string_to_int(ndf, "state")
     # edit_csv(ndf, "state")
     # edit_csv(ndf, "city_or_county")
-    header('stripped2_guns.csv')
+    # header('stripped2_guns.csv')
 
 def header(csv_file):
     headers = pd.read_csv(csv_file, nrows = 1).columns
@@ -64,7 +63,7 @@ def sufficient_data(df, column):
 # alleen nuttige kollomen worden behouden
 # alles wat volgens def sufficient_data onder 60% is, is verwijdert
 def remove(df):
-    keep_col = ['incident_id', 'date', 'state', 'city_or_county', 'n_killed', 'n_injured', 'congressional_district', 'incident_characteristics', 'latitude', 'longitude', 'n_guns_involved', 'participant_age', 'participant_gender', 'participant_age_group', 'participant_status', 'participant_type', 'state_house_district', 'state_senate_district']
+    keep_col = ['incident_id', 'date', 'state', 'city_or_county', 'n_killed', 'n_injured', 'congressional_district', 'incident_characteristics', 'latitude', 'longitude', 'n_guns_involved', 'participant_age', 'participant_gender', 'participant_type', 'state_house_district', 'state_senate_district', 'state_id', 'city_or_county_id']
     df = df[keep_col]
     df.to_csv('stripped2_guns.csv', index = False)
 
