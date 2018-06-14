@@ -80,7 +80,6 @@ def remove(df):
 def participant_untangle(df, column1, column2, column3):
     list1 = []
     n = len(open("stripped2_guns.csv").readlines())
-    print(n)
     for i in range(n-1):
         row1 = df[column1][i]
         row2 = df[column2][i]
@@ -104,16 +103,6 @@ def participant_untangle(df, column1, column2, column3):
             else:
                 row3 = '{"' + row3.replace('|', '", "').replace(':', '":"') + '"}'
             h3 = json.loads(row3)
-        #else:
-            #if pd.notna(df[column1].iloc[i]):
-                #row1 = '{"' + row1.replace('|', '", "').replace(':', '":"') + '"}'
-                #h1 = json.loads(row1)
-            #if pd.notna(df[column2].iloc[i]):
-                #row2 = '{"' + row2.replace('|', '", "').replace(':', '":"') + '"}'
-                #h2 = json.loads(row2)
-            #if pd.notna(df[column3].iloc[i]):
-                #row3 = '{"' + row3.replace('|', '", "').replace(':', '":"') + '"}'
-                #h3 = json.loads(row3)
 
         merged_dict = {}
 
