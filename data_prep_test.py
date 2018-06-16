@@ -6,18 +6,20 @@ import numpy as np
 
 def main():
     dtypes = {'city_or_county': object, 'participant_age': object, 'participant_gender' : object, 'participant_status' : object, 'participant_type' : object}
-    df = pd.read_csv('guns.csv')
+    # df = pd.read_csv('guns.csv')
     ndf = pd.read_csv('stripped2_guns.csv', dtype = dtypes)
+    pdf = pd.read_csv('participants_untangled.csv')
     # remove(ndf)
     # sufficient_data(ndf, "state")
     # string_to_int(ndf, "city_or_county")
     # string_to_int(ndf, "state")
-    # edit_csv(ndf, "state")
-    # edit_csv(ndf, "city_or_county")
+    # dict_to_csv(ndf, "state")
+    # dict_to_csv(ndf, "city_or_county")
     # header('stripped2_guns.csv')
-    list_of_dict = participant_untangle(ndf, 'participant_age', 'participant_gender', 'participant_type')
-    write_to_csv(list_of_dict)
-    
+    # list = participant_untangle(ndf, 'participant_age', 'participant_gender', 'participant_type')
+    # list_to_csv(list)
+    # get_part_info(pdf)
+
     
 
 def header(csv_file):
@@ -36,7 +38,7 @@ def string_to_int(df, column):
             counter+=1
     save_dic(dict, column)
 
-def edit_csv(df, column):
+def dict_to_csv(df, column):
     # haal correcte dict op
     with open(column+"_dict.txt") as file:
         d = file.read() 
@@ -50,9 +52,15 @@ def edit_csv(df, column):
     df = pd.DataFrame.merge(df, df_column, how = 'left', left_on= column, right_on= None , right_index=True )
     df.to_csv("stripped2_guns.csv", index = False)
 
-def write_to_csv(list):
+def list_to_csv(list):
     df = pd.DataFrame(list)
-    df.to_csv("participants_untangled.csv", index = False)
+    order = []
+    for i in range(103):
+        i = str(i)
+        order.append(i)
+    df_reorder = df[order]
+    df_reorder.to_csv("participants_untangled.csv", index = False)
+
 
 # sla dict op in apart textbestand
 def save_dic(dictionary, column):
@@ -124,7 +132,38 @@ def participant_untangle(df, column1, column2, column3):
         if (i % 1000==0):
             print(i)
     return(list1)
-        
+
+    def get_part_info(ndf):   
+        age_list = []
+        age_list_victim = []
+        age_list_perp = []
+        # loop door alle entries
+        for i, column in enumerate(df, 1):
+            for row in df[column]:
+                try:
+                    # turn string to list
+                    row = ast.literal_eval(row)
+                    # turn age to int
+                    age = int(row[0])
+                    age_list.append(age)
+                    if "Victim" in row:
+                        age_list_victim.append(age)
+                    elif "Subject-Suspect" in row:
+                        age_list_perp.append(age)    
+                # als cell NaN of age NaN, continue
+                except:
+                    continue
+
+        # ages = {"participant_ages":age_list, "victim_ages" : age_list_victim, "perp_ages" :age_list_perp}
+
+        age_df = pd.DataFrame(age_list)
+        victim_df = pd.DataFrame(age_list_victim)
+        perp_df = pd.DataFrame(age_list_perp)
+        age_df.to_csv("part_ages.csv", index = False)
+        victim_df.to_csv("victim_ages.csv", index = False)
+        perp_df.to_csv("perp_ages.csv", index = False)
+        print("--- %s seconds ---" % (time.time() - start_time))
+            
     
 
 if __name__ == "__main__":
