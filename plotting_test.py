@@ -12,10 +12,13 @@ start_time = time.time()
 def main():
     df = pd.read_csv('stripped2_guns.csv')
     pdf = pd.read_csv('participants_untangled.csv')
-    # months = datum_prep(df)
-    #bar(months)
-    # killed_per_state = states_data(df, 'state', 'n_killed')
-    # plot_states(killed_per_state)
+    months = datum_prep(df)
+    bar(months)
+    killed_per_state = states_data(df, 'state', 'n_killed')
+    plot_states(killed_per_state)
+    killed = killed_prep(df)
+    histogram(killed)
+
 
 def datum_prep(df):
     # convert date to right format
@@ -94,6 +97,33 @@ def plot_states(state_dict):
 def boxplot():
     print(p)
 
+def killed_prep(df):
+    killed = df['n_killed'].value_counts()
+    dictionary = dict(zip(killed.index.values, killed.values))
+    print(dictionary)
+    count = 0
+    killed = df['n_killed'].value_counts()
+    for key, value in dictionary.items():
+        if key >= 5:
+            count += value
+    dict_new = {key: value for key, value in dictionary.items() if key <= 4}
+    dict_new['5_and_up'] = count
+    print(dict_new)
+    return dict_new
+    
+def histogram(killed):
+    output_file("histogram.html")
+
+    y = list(killed.values())
+    numbers = ['0','1','2','3','4','5+']
+
+    p = figure(x_range=numbers, plot_height=250, title="Deaths per incident")
+    p.vbar(x=numbers, top=y, width=0.9)
+
+    p.xgrid.grid_line_color = None
+    p.y_range.start = 0
+
+    show(p)
 
 
 
