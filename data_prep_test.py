@@ -2,31 +2,30 @@ import pandas as pd
 import csv
 import json
 import numpy as np
-
+import ast
+import itertools 
+from itertools import islice
 
 def main():
     dtypes = {'city_or_county': object, 'participant_age': object, 'participant_gender' : object, 'participant_status' : object, 'participant_type' : object}
     # df = pd.read_csv('guns.csv')
     ndf = pd.read_csv('stripped2_guns.csv', dtype = dtypes)
-    pdf = pd.read_csv('participants_untangled.csv')
+    pdf = pd.read_csv('participants_untangled_v3.csv')
     # remove(ndf)
     # sufficient_data(ndf, "state")
     # string_to_int(ndf, "city_or_county")
     # string_to_int(ndf, "state")
     # dict_to_csv(ndf, "state")
     # dict_to_csv(ndf, "city_or_county")
-    # header('stripped2_guns.csv')
+    # header('stripped_guns.csv')
     # list = participant_untangle(ndf, 'participant_age', 'participant_gender', 'participant_type')
     # list_to_csv(list)
     # get_part_info(pdf)
-
-    
 
 def header(csv_file):
     headers = pd.read_csv(csv_file, nrows = 1).columns
     for i in range(20):
         print(headers[i])
-
 
 def string_to_int(df, column):
     dict = {} 
@@ -59,8 +58,7 @@ def list_to_csv(list):
         i = str(i)
         order.append(i)
     df_reorder = df[order]
-    df_reorder.to_csv("participants_untangled.csv", index = False)
-
+    df_reorder.to_csv("participants_untangled_v3.csv", index = False)
 
 # sla dict op in apart textbestand
 def save_dic(dictionary, column):
@@ -81,9 +79,7 @@ def sufficient_data(df, column):
 def remove(df):
     keep_col = ['incident_id', 'date', 'state', 'city_or_county', 'n_killed', 'n_injured', 'congressional_district', 'incident_characteristics', 'latitude', 'longitude', 'n_guns_involved', 'participant_age', 'participant_gender', 'participant_type', 'state_house_district', 'state_senate_district', 'state_id', 'city_or_county_id']
     df = df[keep_col]
-    df.to_csv('stripped2_guns.csv', index = False)
-
-
+    df.to_csv('stripped2_guns.csv')
 
 def participant_untangle(df, column1, column2, column3):
     list1 = []
@@ -99,21 +95,26 @@ def participant_untangle(df, column1, column2, column3):
             else:
                 row1 = '{"' + row1.replace('|', '", "').replace(':', '":"') + '"}'
             h1 = json.loads(row1)
+        else:
+            h1 = {}
         if pd.notna(df[column2].iloc[i]):
             if "::" in row2:
                 row2 = '{"' + row2.replace('||', '", "').replace('::', '":"') + '"}'
             else:
                 row2 = '{"' + row2.replace('|', '", "').replace(':', '":"') + '"}'
             h2 = json.loads(row2)
+        else:
+            h2 = {}
         if pd.notna(df[column3].iloc[i]):
             if "::" in row3:
                 row3 = '{"' + row3.replace('||', '", "').replace('::', '":"') + '"}'
             else:
                 row3 = '{"' + row3.replace('|', '", "').replace(':', '":"') + '"}'
             h3 = json.loads(row3)
+        else:
+            h3 = {}
 
         merged_dict = {}
-
         # kijk hoe lang de langste lijst is zodat je langs alle keys gaat
         for key in set(list(h1.keys()) + list(h2.keys()) + list(h3.keys())):
             try:
@@ -129,42 +130,39 @@ def participant_untangle(df, column1, column2, column3):
             except KeyError:
                 pass
         list1.append(merged_dict)
-        if (i % 1000==0):
+        if (i % 10000==0):
             print(i)
     return(list1)
 
-    def get_part_info(ndf):   
-        age_list = []
-        age_list_victim = []
-        age_list_perp = []
-        # loop door alle entries
-        for i, column in enumerate(df, 1):
-            for row in df[column]:
-                try:
-                    # turn string to list
-                    row = ast.literal_eval(row)
-                    # turn age to int
-                    age = int(row[0])
-                    age_list.append(age)
-                    if "Victim" in row:
-                        age_list_victim.append(age)
-                    elif "Subject-Suspect" in row:
-                        age_list_perp.append(age)    
-                # als cell NaN of age NaN, continue
-                except:
-                    continue
-
-        # ages = {"participant_ages":age_list, "victim_ages" : age_list_victim, "perp_ages" :age_list_perp}
-
-        age_df = pd.DataFrame(age_list)
-        victim_df = pd.DataFrame(age_list_victim)
-        perp_df = pd.DataFrame(age_list_perp)
-        age_df.to_csv("part_ages.csv", index = False)
-        victim_df.to_csv("victim_ages.csv", index = False)
-        perp_df.to_csv("perp_ages.csv", index = False)
-        print("--- %s seconds ---" % (time.time() - start_time))
-            
-    
+def get_part_info(df):   
+    age_list = []
+    age_list_victim = []
+    age_list_perp = []
+   
+    # loop door alle entries
+    for index, row in islice(df.iterrows(), 0, None):
+        if index % 10000 == 0:
+            print(index)
+        for cell in row:  
+            # als Nan, volgende row 
+            if pd.isna(cell):
+                continue
+            cell = ast.literal_eval(cell)
+            try:
+                age = int(cell[0])
+                age_list.append(age)
+                if "Victim" in cell:
+                    age_list_victim.append(age)
+                elif "Subject-Suspect" in cell:
+                    age_list_perp.append(age)
+            except:
+                continue
+    age_df = pd.DataFrame(age_list)
+    victim_df = pd.DataFrame(age_list_victim)
+    perp_df = pd.DataFrame(age_list_perp)
+    age_df.to_csv("part_ages.csv")
+    victim_df.to_csv("victim_ages.csv")
+    perp_df.to_csv("perp_ages.csv")
 
 if __name__ == "__main__":
     main()
