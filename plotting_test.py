@@ -1,59 +1,71 @@
 import pandas as pd
 import csv
 import json
-import ast
 import bokeh
 from bokeh.io import output_file, show
-from bokeh.plotting import figure
+from bokeh.plotting import figure, ColumnDataSource
 from bokeh.sampledata.us_states import data as us_states
-import time
-start_time = time.time()
+from bokeh.core.properties import value
+
 
 def main():
     df = pd.read_csv('stripped2_guns.csv')
-    pdf = pd.read_csv('participants_untangled.csv')
-    months = datum_prep(df)
-    bar(months)
-    killed_per_state = states_data(df, 'state', 'n_killed')
-    plot_states(killed_per_state)
-    killed = killed_prep(df)
-    histogram(killed)
-
+    pdf = pd.read_csv('participants_untangled_v3.csv')
+    states_df = pd.read_csv('populations_stats.csv')
+    #deaths_per_month = datum_prep(df)
+    # bar(months)
+    #killed_per_state = states_data(df, states_df, 'state', 'n_killed')
+    #plot_states(killed_per_state)
+    #killed = killed_prep(df)
+    #histogram(killed)
+    # types, death_type_list = death_types(df, "date", "incident_characteristics")
+    types, death_type_state = death_types(df, "state", "incident_characteristics")        
+    #ages_df = pd.read_csv('part_ages.csv')
+    #boxplot(ages_df)
+    # stacked_chart(deaths_per_month, types, death_type_month)
 
 def datum_prep(df):
     # convert date to right format
     df['date'] =  pd.to_datetime(df['date'], yearfirst= True )
-
     # group n_killed by year and compute sum, mean and maximum
-    months = df.groupby(df['date'].dt.month)['n_killed'].agg(['sum'])
-    list_months = months.values.tolist()
-    print(list_months)
-    return(list_months)
+    time_period = df.groupby(df['date'].dt.month)['n_killed'].agg(['sum'])
+    list_time_period = [item for value in time_period.values for item in value]
+    return(list_time_period)
 
 def bar(values):
-    output_file("bars.html")
+    output_file("bars_years.html")
 
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
-    p = figure(x_range=months, plot_height=250, title="Deaths per month")
-    p.vbar(x=months, top=values, width=0.9)
+    years = ['2013', '2014','2015', '2016', '2017', '2018']
+    p = figure(x_range=months, plot_height=250, title="Deaths per year")
+    p.vbar(x=years, top=values, width=0.9)
 
     p.xgrid.grid_line_color = None
     p.y_range.start = 0
 
     show(p)
 
-def states_data(df, column, column1):
+def states_data(df, df_states, column, column1):
     states = df.groupby(df[column])[column1].agg(['sum'])
     state_names = states.index.values
     # get n_killed
     values = [item for value in states.values for item in value]
     # create dict met state name, n_killed
     states_dict = dict(zip(state_names, values))
-    return(states_dict)
+
+    relative_list = []
+    for state in state_names:
+        pop = df_states.loc[df_states["GEO.display-label"] == state]["respop72017"].values
+        pop = int(pop)    
+        relative_n_killed = int(pop/states_dict[state])
+        relative_list.append(relative_n_killed)
+    relative_state_dict = dict(zip(state_names, relative_list))
+        # relatieve waarde
+    return(relative_state_dict)
+
 
 def plot_states(state_dict):
-    output_file("fatalities_per_state.html")
+    output_file("fatalities_per_state_rel.html")
     # hawaii en alaska weggehaald want dat fockte mn kaart op
     del us_states["HI"]
     del us_states["AK"]
@@ -67,23 +79,25 @@ def plot_states(state_dict):
     for state_id in us_states:
         state_name = us_states[state_id]["name"]
         fatalities = state_dict[state_name]
-        if fatalities <= 100:
-            color = "#ffff66"
+        if fatalities <= 2500:
+            color = "#e60000"
             state_color.append(color)
-        elif fatalities <= 1000:
-            color = "#ffd633"
-            state_color.append(color)
-        elif fatalities <= 2000:
-            color = "#ff8c1a"
-            state_color.append(color)
-        elif fatalities <= 3000:
-            color = "#ff6600"
-            state_color.append(color)
-        elif fatalities <= 4000:
+            print (fatalities, state_name)
+        elif fatalities <= 5000:
             color = "#ff3333"
             state_color.append(color)
+        elif fatalities <= 7500:
+            color = "#ff6600"
+            state_color.append(color)
+        elif fatalities <= 10000:
+            color = "#ff8c1a"
+            state_color.append(color)
+        elif fatalities <= 15000:
+            color = "#ffd633"
+            state_color.append(color)
         else:
-            color = "#e60000"
+            color = "#ffff66"
+            
             state_color.append(color)           
 
     map = figure(title="Fatalities per state", toolbar_location="left",
@@ -94,9 +108,6 @@ def plot_states(state_dict):
 
     show(map)
 
-def boxplot():
-    print(p)
-
 def killed_prep(df):
     killed = df['n_killed'].value_counts()
     dictionary = dict(zip(killed.index.values, killed.values))
@@ -105,8 +116,8 @@ def killed_prep(df):
     killed = df['n_killed'].value_counts()
     for key, value in dictionary.items():
         if key >= 5:
-            count += value
-    dict_new = {key: value for key, value in dictionary.items() if key <= 4}
+            count += value * key
+    dict_new = {key: key*value for key, value in dictionary.items() if key > 0 and key <= 4}
     dict_new['5_and_up'] = count
     print(dict_new)
     return dict_new
@@ -114,14 +125,90 @@ def killed_prep(df):
 def histogram(killed):
     output_file("histogram.html")
 
+    numbers = ['1','2','3','4','5+']
     y = list(killed.values())
-    numbers = ['0','1','2','3','4','5+']
 
-    p = figure(x_range=numbers, plot_height=250, title="Deaths per incident")
+    p = figure(x_range=numbers, plot_height=250, title="Total deaths per death toll", x_axis_label = "Fatalities per incident",
+        y_axis_label = "Total fatalities")
+    
     p.vbar(x=numbers, top=y, width=0.9)
+
 
     p.xgrid.grid_line_color = None
     p.y_range.start = 0
+
+    show(p)
+
+def death_types(df, gb_column, column1): 
+    states = {}
+    keywords = ['Mass Shooting', 'Gang', 'robbery', 'Domestic', 'Home Invasion', 'Drive-by', 'Suicide']
+    death_type_list = []
+    if gb_column == 'date':
+        df['date'] =  pd.to_datetime(df['date'], yearfirst= True)    
+    for word in keywords:
+        # zoek keywords
+        df_ = df[df[column1].str.contains(word, na = False)] 
+        # voor maand/jaar indeling 
+        if gb_column == 'date':
+            deaths_per_type = df_.groupby(df_[gb_column].dt.month)['n_killed'].agg('sum')
+            death_type_list.append(deaths_per_type.values)
+        # voor staten
+        else:
+            deaths_per_type = df_.groupby(df_[gb_column])['n_killed'].agg('sum')
+            # dictionary met staten en nested dictionary met types per staat
+            for state in deaths_per_type.index.values:
+                if state not in states:
+                    states[state] = {}
+                    states[state][word] = deaths_per_type.loc[state]
+                else:
+                    states[state][word] = deaths_per_type.loc[state]
+    # percentages van type per staat
+    for state, death_types in states.items():
+        total_per_state = sum(death_types.values())
+        for key, value in states[state].items():
+            value /= float(total_per_state)
+            states[state][key] = round(value, 3)
+
+    print(states)
+
+    if gb_column == 'date':
+        # returned lijst van lijsten, elke lijst aantal doden per maand voor type ongeval
+        return(keywords, death_type_list)
+    else:
+        return(keywords, states)
+
+
+def stacked_chart(deaths_per_month, types, death_list):
+    output_file("stacked.html")
+    death_types = types
+    months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Juni', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+    colors = ["#c9d9d3", "#718dbf", "#e84d60", "#e60000", "#ffd633", "#ffff66", "#ff8c1a", ]
+
+
+    data = {'Months' : months,
+            types[0]   : death_list[0],
+            types[1]   : death_list[1],
+            types[2]   : death_list[2],
+            types[3]   : death_list[3],
+            types[4]   : death_list[4],
+            types[5]   : death_list[5],
+            types[6]   : death_list[6]}
+
+    source = ColumnDataSource(data=data)
+
+    p = figure(x_range=months, plot_height=250, title="Causes of deaths",
+            toolbar_location=None, tools="")
+
+    p.vbar_stack(death_types, x='Months', width=0.9, color=colors, source=source,
+                legend=[value(x) for x in death_types])
+
+    p.y_range.start = 0
+    p.x_range.range_padding = 0.1
+    p.xgrid.grid_line_color = None
+    p.axis.minor_tick_line_color = None
+    p.outline_line_color = None
+    p.legend.location = "top_left"
+    p.legend.orientation = "horizontal"
 
     show(p)
 

@@ -2,9 +2,10 @@ from bokeh.core.properties import value
 from bokeh.io import show, output_file
 from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
+import plotting_test
 
 output_file("stacked.html")
-
+print(plotting_test.death_types)
 deaths = ["Suicide", "Homicide", "Accident"]
 months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Juni', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
 colors = ["#c9d9d3", "#718dbf", "#e84d60"]
