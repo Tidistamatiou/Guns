@@ -1,28 +1,34 @@
 import pandas as pd
+import numpy as np
 import csv
 import json
+import ast
 import bokeh
+from bokeh.palettes import Category20, YlOrRd
 from bokeh.io import output_file, show
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.sampledata.us_states import data as us_states
 from bokeh.core.properties import value
+import itertools
+from itertools import islice
+
 
 
 def main():
-    df = pd.read_csv('stripped2_guns.csv')
+    #df = pd.read_csv('stripped2_guns.csv')
     pdf = pd.read_csv('participants_untangled_v3.csv')
     states_df = pd.read_csv('populations_stats.csv')
+    scatter_prep(pdf)
     #deaths_per_month = datum_prep(df)
     # bar(months)
     #killed_per_state = states_data(df, states_df, 'state', 'n_killed')
     #plot_states(killed_per_state)
     #killed = killed_prep(df)
     #histogram(killed)
-    # types, death_type_list = death_types(df, "date", "incident_characteristics")
-    types, death_type_state = death_types(df, "state", "incident_characteristics")        
+    # types, total_month_list_p = death_types(df, "date", "incident_characteristics")
+    #types, death_type_state = death_types(df, "state", "incident_characteristics")        
     #ages_df = pd.read_csv('part_ages.csv')
-    #boxplot(ages_df)
-    # stacked_chart(deaths_per_month, types, death_type_month)
+    #stacked_chart(types, total_month_list_p)
 
 def datum_prep(df):
     # convert date to right format
@@ -57,10 +63,17 @@ def states_data(df, df_states, column, column1):
     for state in state_names:
         pop = df_states.loc[df_states["GEO.display-label"] == state]["respop72017"].values
         pop = int(pop)    
-        relative_n_killed = int(pop/states_dict[state])
+        relative_n_killed = float(100000/(pop/states_dict[state]))
+        relative_n_killed = round(relative_n_killed, 3)
         relative_list.append(relative_n_killed)
     relative_state_dict = dict(zip(state_names, relative_list))
-        # relatieve waarde
+    
+    for k, v in relative_state_dict.items():
+        if v > 35:
+            print(k, v)
+
+
+    # relatieve waarde
     return(relative_state_dict)
 
 
@@ -69,38 +82,45 @@ def plot_states(state_dict):
     # hawaii en alaska weggehaald want dat fockte mn kaart op
     del us_states["HI"]
     del us_states["AK"]
-
+    print(state_dict)
     # vind long/lat van staten
     state_lon = [us_states[code]["lons"] for code in us_states]
     state_lat = [us_states[code]["lats"] for code in us_states]
-    
+
     # koppel state_name uit bokeh aan n_killed
     state_color = []
     for state_id in us_states:
         state_name = us_states[state_id]["name"]
         fatalities = state_dict[state_name]
-        if fatalities <= 2500:
-            color = "#e60000"
+        if fatalities >= 40:
+            color = "#800026"
             state_color.append(color)
-            print (fatalities, state_name)
-        elif fatalities <= 5000:
-            color = "#ff3333"
+        elif fatalities >= 35:
+            color = "#bd0026"
             state_color.append(color)
-        elif fatalities <= 7500:
-            color = "#ff6600"
+        elif fatalities >= 30:
+            color = "#e31a1c"
             state_color.append(color)
-        elif fatalities <= 10000:
-            color = "#ff8c1a"
+        elif fatalities >= 25:
+            color = "#fc4e2a"
+            state_color.append(color)            
+        elif fatalities >= 20:
+            color = "#fd8d3c"
             state_color.append(color)
-        elif fatalities <= 15000:
-            color = "#ffd633"
+        elif fatalities >= 15:
+            color = "#feb24c"
+            state_color.append(color)
+        elif fatalities >= 10:
+            color = "#fed976"
+            state_color.append(color)
+        elif fatalities >= 5:
+            color = "#ffeda0"
             state_color.append(color)
         else:
-            color = "#ffff66"
-            
+            color = '#ffffcc'
             state_color.append(color)           
 
-    map = figure(title="Fatalities per state", toolbar_location="left",
+    map = figure(title="Fatalities per 100.000 inhabitants", toolbar_location="left",
         plot_width=1000, plot_height=800)
 
     map.patches(state_lon, state_lat, fill_alpha=0.7, fill_color=state_color, 
@@ -141,10 +161,10 @@ def histogram(killed):
 
 def death_types(df, gb_column, column1): 
     states = {}
-    keywords = ['Mass Shooting', 'Gang', 'robbery', 'Domestic', 'Home Invasion', 'Drive-by', 'Suicide']
+    keywords = ['Suicide', 'Domestic', 'Bar', 'Mass Shooting', 'Gang', 'robbery', 'School', 'Home Invasion', 'Drive-by', 'Drug involvement', 'House party']
     death_type_list = []
     if gb_column == 'date':
-        df['date'] =  pd.to_datetime(df['date'], yearfirst= True)    
+        df[gb_column] =  pd.to_datetime(df[gb_column], yearfirst= True)
     for word in keywords:
         # zoek keywords
         df_ = df[df[column1].str.contains(word, na = False)] 
@@ -152,9 +172,11 @@ def death_types(df, gb_column, column1):
         if gb_column == 'date':
             deaths_per_type = df_.groupby(df_[gb_column].dt.month)['n_killed'].agg('sum')
             death_type_list.append(deaths_per_type.values)
+            
         # voor staten
-        else:
+        elif gb_column == 'state':
             deaths_per_type = df_.groupby(df_[gb_column])['n_killed'].agg('sum')
+
             # dictionary met staten en nested dictionary met types per staat
             for state in deaths_per_type.index.values:
                 if state not in states:
@@ -162,6 +184,7 @@ def death_types(df, gb_column, column1):
                     states[state][word] = deaths_per_type.loc[state]
                 else:
                     states[state][word] = deaths_per_type.loc[state]
+
     # percentages van type per staat
     for state, death_types in states.items():
         total_per_state = sum(death_types.values())
@@ -169,38 +192,63 @@ def death_types(df, gb_column, column1):
             value /= float(total_per_state)
             states[state][key] = round(value, 3)
 
-    print(states)
 
     if gb_column == 'date':
-        # returned lijst van lijsten, elke lijst aantal doden per maand voor type ongeval
-        return(keywords, death_type_list)
+        total_month_list = []
+        # per maand
+        for i in range(12):
+            death_list_month = []
+            for death_type in death_type_list:
+                death_list_month.append(death_type[i])
+            total_month_list.append(np.sum(death_list_month))
+        
+        total_month_list_percentage = []
+        for k in range(11):
+            month_list_percentage = []
+            for i in range(12):
+                percentage = float(death_type_list[k][i]/total_month_list[i])
+                month_list_percentage.append(round(percentage, 3))
+            total_month_list_percentage.append(month_list_percentage)
+        
+        # returned lijst van lijsten, elke lijst is het percentage van het totaal aantal doden per type per maand
+        return(keywords, total_month_list_percentage)
     else:
+        print(states)
         return(keywords, states)
 
 
-def stacked_chart(deaths_per_month, types, death_list):
+
+def stacked_chart(death_types, death_list):
     output_file("stacked.html")
-    death_types = types
+    print(death_types)
+    print(death_list)
     months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Juni', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
-    colors = ["#c9d9d3", "#718dbf", "#e84d60", "#e60000", "#ffd633", "#ffff66", "#ff8c1a", ]
+    colors = ["#c9d9d3", "#718dbf", "#e84d60", "#e60000", "#7FFF00", "#0000FF", "#FF8C00", "#9400D3", "#ffd633", "#ffff66", "#ff8c1a"]
 
 
     data = {'Months' : months,
-            types[0]   : death_list[0],
-            types[1]   : death_list[1],
-            types[2]   : death_list[2],
-            types[3]   : death_list[3],
-            types[4]   : death_list[4],
-            types[5]   : death_list[5],
-            types[6]   : death_list[6]}
+            death_types[0]   : death_list[0],
+            death_types[1]   : death_list[1],
+            death_types[2]   : death_list[2],
+            death_types[3]   : death_list[3],
+            death_types[4]   : death_list[4],
+            death_types[5]   : death_list[5],
+            death_types[6]   : death_list[6],
+            death_types[7]   : death_list[7],
+            death_types[8]   : death_list[8],
+            death_types[9]   : death_list[9],
+            death_types[10]  : death_list[10]}
+    
+
 
     source = ColumnDataSource(data=data)
 
-    p = figure(x_range=months, plot_height=250, title="Causes of deaths",
+    p = figure(x_range=months, plot_height=400, title="Causes of deaths",
             toolbar_location=None, tools="")
 
     p.vbar_stack(death_types, x='Months', width=0.9, color=colors, source=source,
-                legend=[value(x) for x in death_types])
+                    legend=[value(x) for x in death_types])
+
 
     p.y_range.start = 0
     p.x_range.range_padding = 0.1
@@ -210,9 +258,40 @@ def stacked_chart(deaths_per_month, types, death_list):
     p.legend.location = "top_left"
     p.legend.orientation = "horizontal"
 
+
     show(p)
 
-
+def scatter_prep(df):
+    # lijst voor alle victim/perp paren
+    all_pairs = []
+    # iterate through incidents
+    for index, row in islice(df.iterrows(), 0, None):
+        if index % 10000 == 0:
+            print(index)
+        # nieuwe victim/perp lijsten voor elk incident
+        age_list_victim = []
+        age_list_perp = []
+        #iterate through participants
+        for cell in row:  
+            if pd.isna(cell):
+                for victim_age in age_list_victim:
+                    for perp_age in age_list_perp:
+                        # koppel victim_age aan perp_age voor alle deelnemers van incident
+                        pair = [victim_age, perp_age]
+                        all_pairs.append(pair)
+                # volgende incident
+                break
+            else:    
+                cell = ast.literal_eval(cell)
+                try:
+                    age = int(cell[0])
+                    if "Victim" in cell:
+                        age_list_victim.append(age)
+                    elif "Subject-Suspect" in cell:
+                        age_list_perp.append(age)
+                except:
+                    continue
+    print(all_pairs[:100])
 
 if __name__ == "__main__":
     main()
