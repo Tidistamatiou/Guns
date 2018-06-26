@@ -4,13 +4,13 @@ import csv
 import json
 import ast
 import bokeh
-from bokeh.palettes import Category20, YlOrRd
+from bokeh.palettes import Viridis256 as palette
 from bokeh.io import output_file, show
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.sampledata.us_states import data as us_states
 from bokeh.core.properties import value
 from random import randint
-from bokeh.models import Legend
+from bokeh.models import LinearColorMapper, ColorBar, HoverTool
 import itertools
 from itertools import islice
 
@@ -23,14 +23,14 @@ def main():
     #scatter_prep(pdf)
     #deaths_per_month = datum_prep(df)
     # bar(months)
-    #killed_per_state = states_data(df, states_df, 'state', 'n_killed')
-    #plot_states(killed_per_state)
+    killed_per_state = states_data(df, states_df, 'state', 'n_killed')
+    plot_states(killed_per_state)
     #killed = killed_prep(df)
     #histogram(killed)
-    types, total_month_list_p = death_types(df, "date", "incident_characteristics")
+    #types, total_month_list_p = death_types(df, "date", "incident_characteristics")
     #types, death_type_state = death_types(df, "state", "incident_characteristics")        
     #ages_df = pd.read_csv('part_ages.csv')
-    stacked_chart(types, total_month_list_p)
+    #stacked_chart(types, total_month_list_p)
 
 def datum_prep(df):
     # convert date to right format
@@ -64,8 +64,7 @@ def states_data(df, df_states, column, column1):
     relative_list = []
     for state in state_names:
         pop = df_states.loc[df_states["GEO.display-label"] == state]["respop72017"].values
-        print(pop)
-        pop = int(pop)    
+        pop = int(pop[0])    
         relative_n_killed = float(100000/(pop/states_dict[state]))
         relative_n_killed = round(relative_n_killed, 3)
         relative_list.append(relative_n_killed)
@@ -78,55 +77,69 @@ def states_data(df, df_states, column, column1):
 
 
 def plot_states(state_dict):
+    palette.reverse()
     output_file("fatalities_per_state_rel.html")
     # hawaii en alaska weggehaald want dat fockte mn kaart op
     del us_states["HI"]
     del us_states["AK"]
-    print(state_dict)
     # vind long/lat van staten
-    state_lon = [us_states[code]["lons"] for code in us_states]
-    state_lat = [us_states[code]["lats"] for code in us_states]
+    state_lons = [us_states[code]["lons"] for code in us_states]
+    state_lats = [us_states[code]["lats"] for code in us_states]
+    state_names = [us_states[code]["name"] for code in us_states]
+    state_fatalities = []
+    for state_name in state_names:
+        amount = state_dict[state_name]
+        state_fatalities.append(amount)
+    color_mapper = {}
+    color_mapper = LinearColorMapper(palette=palette, low = 5, high = 50)
 
-    # koppel state_name uit bokeh aan n_killed
-    state_color = []
-    for state_id in us_states:
-        state_name = us_states[state_id]["name"]
-        fatalities = state_dict[state_name]
-        if fatalities >= 40:
-            color = "#800026"
-            state_color.append(color)
-        elif fatalities >= 35:
-            color = "#bd0026"
-            state_color.append(color)
-        elif fatalities >= 30:
-            color = "#e31a1c"
-            state_color.append(color)
-        elif fatalities >= 25:
-            color = "#fc4e2a"
-            state_color.append(color)            
-        elif fatalities >= 20:
-            color = "#fd8d3c"
-            state_color.append(color)
-        elif fatalities >= 15:
-            color = "#feb24c"
-            state_color.append(color)
-        elif fatalities >= 10:
-            color = "#fed976"
-            state_color.append(color)
-        elif fatalities >= 5:
-            color = "#ffeda0"
-            state_color.append(color)
-        else:
-            color = '#ffffcc'
-            state_color.append(color)           
+    t = sorted(zip(state_fatalities, state_lons, state_lats, state_names))
 
-    map = figure(title="Fatalities per 100.000 inhabitants", toolbar_location="left",
-        plot_width=1000, plot_height=800)
+    state_lons = [x for _, x, _, _ in t]
+    state_lats = [x for _, _, x, _ in t]
+    state_names = [x for _, _, _, x in t]
+    state_fatalities = [x for x, _, _, _ in t]
 
-    map.patches(state_lon, state_lat, fill_alpha=0.7, fill_color=state_color, 
-        line_color="#884444", line_width=2, line_alpha=0.3)
+    data = dict(
+        x = state_lons,
+        y = state_lats,
+        name = state_names,
+        rate = state_fatalities
+    )
 
-    show(map)
+    color_mapper.low_color = 'blue'
+    color_mapper.high_color = 'red'
+
+    TOOLS = "pan,wheel_zoom,reset,hover,save"
+
+    p = figure(
+        title="Fatalities per 100.000 inhabitants",
+        tools=TOOLS, 
+        toolbar_location="left", x_axis_location = None, 
+        y_axis_location = None,
+        )
+
+    p.grid.grid_line_color = None
+    #p.hover.point_policy = "follow_mouse"   
+
+    color_bar = ColorBar(color_mapper=color_mapper, location=(0,0))
+    p.add_layout(color_bar, 'right')
+
+    p.grid.grid_line_color = None
+
+    hover = p.select(dict(type=HoverTool))
+    hover.tooltips = [("State", "@name"), ("Gun deaths per 100k", "@rate"), ("(Long, Lat)", "($x, $y)")]
+    hover.point_policy = "follow_mouse"
+    p.patches(
+        'x', 'y', 
+        source = data, 
+        fill_color={'field' : 'rate', 'transform' : color_mapper},
+        fill_alpha=0.7,
+        line_color="white", line_width=0.5, line_alpha=0.3,
+        )
+    
+
+    show(p)
 
 def killed_prep(df):
     killed = df['n_killed'].value_counts()
