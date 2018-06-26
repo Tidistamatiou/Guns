@@ -10,26 +10,27 @@ from bokeh.plotting import figure, ColumnDataSource
 from bokeh.sampledata.us_states import data as us_states
 from bokeh.core.properties import value
 from random import randint
+from bokeh.models import Legend
 import itertools
 from itertools import islice
 
 
 
 def main():
-    #df = pd.read_csv('stripped2_guns.csv')
+    df = pd.read_csv('stripped2_guns.csv')
     pdf = pd.read_csv('participants_untangled_v3.csv')
     states_df = pd.read_csv('populations_stats.csv')
-    scatter_prep(pdf)
+    #scatter_prep(pdf)
     #deaths_per_month = datum_prep(df)
     # bar(months)
     #killed_per_state = states_data(df, states_df, 'state', 'n_killed')
     #plot_states(killed_per_state)
     #killed = killed_prep(df)
     #histogram(killed)
-    # types, total_month_list_p = death_types(df, "date", "incident_characteristics")
+    types, total_month_list_p = death_types(df, "date", "incident_characteristics")
     #types, death_type_state = death_types(df, "state", "incident_characteristics")        
     #ages_df = pd.read_csv('part_ages.csv')
-    #stacked_chart(types, total_month_list_p)
+    stacked_chart(types, total_month_list_p)
 
 def datum_prep(df):
     # convert date to right format
@@ -63,15 +64,13 @@ def states_data(df, df_states, column, column1):
     relative_list = []
     for state in state_names:
         pop = df_states.loc[df_states["GEO.display-label"] == state]["respop72017"].values
+        print(pop)
         pop = int(pop)    
         relative_n_killed = float(100000/(pop/states_dict[state]))
         relative_n_killed = round(relative_n_killed, 3)
         relative_list.append(relative_n_killed)
     relative_state_dict = dict(zip(state_names, relative_list))
     
-    for k, v in relative_state_dict.items():
-        if v > 35:
-            print(k, v)
 
 
     # relatieve waarde
@@ -197,7 +196,7 @@ def death_types(df, gb_column, column1):
     if gb_column == 'date':
         total_month_list = []
         # per maand
-        for i in range(12):
+        for i in range(len(deaths_per_type.values)):
             death_list_month = []
             for death_type in death_type_list:
                 death_list_month.append(death_type[i])
@@ -206,7 +205,7 @@ def death_types(df, gb_column, column1):
         total_month_list_percentage = []
         for k in range(11):
             month_list_percentage = []
-            for i in range(12):
+            for i in range(len(deaths_per_type.values)):
                 percentage = float(death_type_list[k][i]/total_month_list[i])
                 month_list_percentage.append(round(percentage, 3))
             total_month_list_percentage.append(month_list_percentage)
@@ -220,14 +219,19 @@ def death_types(df, gb_column, column1):
 
 
 def stacked_chart(death_types, death_list):
-    output_file("stacked.html")
-    print(death_types)
-    print(death_list)
-    months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Juni', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+    output_file("stacked_years.html")
+
+    if len(death_list[0]) > 6:
+        x_axis_labels = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Juni', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+        output_file("stacked_months.html")
+    else:
+        output_file("stacked_years.html")
+        x_axis_labels = ['2013', '2014', '2015', '2016', '2017', '2018']
+
     colors = ["#c9d9d3", "#718dbf", "#e84d60", "#e60000", "#7FFF00", "#0000FF", "#FF8C00", "#9400D3", "#ffd633", "#ffff66", "#ff8c1a"]
 
 
-    data = {'Months' : months,
+    data = {'Months' : x_axis_labels,
             death_types[0]   : death_list[0],
             death_types[1]   : death_list[1],
             death_types[2]   : death_list[2],
@@ -240,15 +244,14 @@ def stacked_chart(death_types, death_list):
             death_types[9]   : death_list[9],
             death_types[10]  : death_list[10]}
     
-
-
     source = ColumnDataSource(data=data)
 
-    p = figure(x_range=months, plot_height=400, title="Causes of deaths",
+    p = figure(x_range=x_axis_labels, plot_height=400, title="Causes of deaths",
             toolbar_location=None, tools="")
 
-    p.vbar_stack(death_types, x='Months', width=0.9, color=colors, source=source,
-                    legend=[value(x) for x in death_types])
+    rs = p.vbar_stack(death_types, x='Months', width=0.9, color=colors, source=source)
+                    #legend=[value(x) for x in death_types])
+
 
 
     p.y_range.start = 0
@@ -256,9 +259,11 @@ def stacked_chart(death_types, death_list):
     p.xgrid.grid_line_color = None
     p.axis.minor_tick_line_color = None
     p.outline_line_color = None
-    p.legend.location = "top_left"
-    p.legend.orientation = "horizontal"
+    #p.legend.location = "top_right"
+    #p.legend.orientation = "horizontal"
 
+    legend = Legend(items=[(death, [r]) for (death, r) in zip(death_types, rs)], location=(0, 30))
+    p.add_layout(legend, 'right')
 
     show(p)
 

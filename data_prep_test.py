@@ -164,5 +164,39 @@ def get_part_info(df):
     victim_df.to_csv("victim_ages.csv")
     perp_df.to_csv("perp_ages.csv")
 
+    def get_gender_info(df):   
+    gender_list_victim = []
+    gender_list_perp = []
+    
+    # loop door alle entries
+    for index, row in islice(df.iterrows(), 0, None):
+        if index % 10000 == 0:
+            print(index)
+        for cell in row:  
+            # als Nan, volgende row 
+            if pd.isna(cell):
+                break
+            cell = ast.literal_eval(cell)
+            try:
+                if "Victim" in cell:
+                    if "Male" in cell:
+                        gender_list_victim.append("male")
+                    elif "Female" in cell:
+                        gender_list_victim.append("female")
+                elif "Subject-Suspect" in cell:
+                    if "Male" in cell:
+                        gender_list_perp.append("male")
+                    elif "Female" in cell:
+                        gender_list_perp.append("female")
+            except:
+                continue
+    victim_gender_df = pd.DataFrame(gender_list_victim)
+    perp_gender_df = pd.DataFrame(gender_list_perp)
+    victim_gender_df.to_csv("victim_gender.csv")
+    perp_gender_df.to_csv("perp_gender.csv")
+
+
+
+
 if __name__ == "__main__":
     main()
