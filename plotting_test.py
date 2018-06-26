@@ -12,12 +12,16 @@ start_time = time.time()
 def main():
     df = pd.read_csv('stripped2_guns.csv')
     pdf = pd.read_csv('participants_untangled.csv')
-    months = datum_prep(df)
-    bar(months)
-    killed_per_state = states_data(df, 'state', 'n_killed')
-    plot_states(killed_per_state)
-    killed = killed_prep(df)
-    histogram(killed)
+    #months = datum_prep(df)
+    #bar(months)
+    #killed_per_state = states_data(df, 'state', 'n_killed')
+    #plot_states(killed_per_state)
+    #killed = killed_prep(df)
+    #histogram(killed)
+    #ages_df = pd.read_csv('part_ages.csv')
+    #boxplot(ages_df)
+    suicide_data = suicide_prep(df)
+    #suicide(suicide_data)
 
 
 def datum_prep(df):
@@ -33,7 +37,7 @@ def datum_prep(df):
 def bar(values):
     output_file("bars.html")
 
-    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    months = ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
 
     p = figure(x_range=months, plot_height=250, title="Deaths per month")
     p.vbar(x=months, top=values, width=0.9)
@@ -94,9 +98,6 @@ def plot_states(state_dict):
 
     show(map)
 
-def boxplot():
-    print(p)
-
 def killed_prep(df):
     killed = df['n_killed'].value_counts()
     dictionary = dict(zip(killed.index.values, killed.values))
@@ -124,6 +125,69 @@ def histogram(killed):
     p.y_range.start = 0
 
     show(p)
+
+def boxplot(df):
+    cats = list("a")
+
+    # find quartiles
+    quartiles = df.quantile([0.25, .5, .75])
+    q_list = []
+    for quartile in quartiles.values:
+        value = quartile[0]
+        q_list.append(value)
+    
+    # define quartiles, iqr, upper/lower
+    q1, q2, q3 = q_list[0], q_list[1], q_list[2]
+    iqr = q3 - q1
+    upper, lower = q3 + 1.5*iqr, q1 - 1.5*iqr
+    print(q1)
+    print(q2)
+    print(q3)
+    print(upper)
+    print(lower)
+    outliers = []
+    for row in df["0"]:
+       if row > upper or  row < lower:
+            outliers.append(row)
+    
+    p = figure(tools="save", background_fill_color="#EFE8E2", title="Average age of all participants", x_range=cats)
+    
+    # stems
+    p.segment(cats, upper, cats, q3, line_color="black")
+    p.segment(cats, lower, cats, q1, line_color="black")
+
+    # boxes     
+    p.vbar(cats, 0.7, q2, q3, fill_color="#E08E79", line_color="black")
+    p.vbar(cats, 0.7, q1, q2, fill_color="#3B8686", line_color="black")
+
+    # whiskers (almost-0 height rects simpler than segments)
+    p.rect(cats, lower, 0.2, 0.01, line_color="black")
+    p.rect(cats, upper, 0.2, 0.01, line_color="black")
+
+    p.xgrid.grid_line_color = None
+    p.ygrid.grid_line_color = "white"
+    p.grid.grid_line_width = 2
+    p.xaxis.major_label_text_font_size="12pt"
+
+    output_file("boxplot.html", title="boxplot.py example")
+
+    show(p)
+
+def suicide_prep(df):
+    # convert date to right format
+    df['date'] =  pd.to_datetime(df['date'], yearfirst= True )
+
+    # group n_killed by year and compute sum, mean and maximum
+    for row in df['incident_characteristics']:
+        if 'Suicide' or 'suicide' in row:
+            months = df.groupby(df['date'].dt.month)['incident_characteristics'].agg(['sum'])
+    list_months = months.values.tolist()
+    print(list_months)
+    return(list_months)
+        
+
+#def suicide(df):
+
 
 
 
