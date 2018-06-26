@@ -9,6 +9,7 @@ from bokeh.io import output_file, show
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.sampledata.us_states import data as us_states
 from bokeh.core.properties import value
+from random import randint
 import itertools
 from itertools import islice
 
@@ -261,13 +262,15 @@ def stacked_chart(death_types, death_list):
 
     show(p)
 
+def plot_scatter(p, x, y):
+    p.scatter(x, y, size=2, line_color="navy", fill_color="orange", alpha=0.5)
+    
 def scatter_prep(df):
+    
     # lijst voor alle victim/perp paren
     all_pairs = []
     # iterate through incidents
     for index, row in islice(df.iterrows(), 0, None):
-        if index % 10000 == 0:
-            print(index)
         # nieuwe victim/perp lijsten voor elk incident
         age_list_victim = []
         age_list_perp = []
@@ -291,7 +294,15 @@ def scatter_prep(df):
                         age_list_perp.append(age)
                 except:
                     continue
-    print(all_pairs[:100])
+
+    p = figure(title="Age victim against age perpetrator", toolbar_location=None, x_axis_label='Age victim', y_axis_label='Age perpetrator')
+    p.grid.grid_line_color = None
+    p.background_fill_color = "#eeeeee"
+    for i in range(500):
+        random = randint(0, 49511)
+        plot_scatter(p, all_pairs[random][0], all_pairs[random][1])
+    show(p)
+    output_file("scatterplot.html")
 
 if __name__ == "__main__":
     main()
