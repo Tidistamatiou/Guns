@@ -9,8 +9,10 @@ from bokeh.io import output_file, show
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.sampledata.us_states import data as us_states
 from bokeh.core.properties import value
+from bokeh.embed import components
 from random import randint
 from bokeh.models import LinearColorMapper, ColorBar, HoverTool
+from scipy import stats
 import itertools
 from itertools import islice
 
@@ -20,11 +22,11 @@ def main():
     df = pd.read_csv('stripped2_guns.csv')
     pdf = pd.read_csv('participants_untangled_v3.csv')
     states_df = pd.read_csv('populations_stats.csv')
-    #scatter_prep(pdf)
+    scatter_prep(pdf)
     #deaths_per_month = datum_prep(df)
     # bar(months)
-    killed_per_state = states_data(df, states_df, 'state', 'n_killed')
-    plot_states(killed_per_state)
+    #killed_per_state = states_data(df, states_df, 'state', 'n_killed')
+    #plot_states(killed_per_state)
     #killed = killed_prep(df)
     #histogram(killed)
     #types, total_month_list_p = death_types(df, "date", "incident_characteristics")
@@ -117,10 +119,11 @@ def plot_states(state_dict):
         tools=TOOLS, 
         toolbar_location="left", x_axis_location = None, 
         y_axis_location = None,
+        plot_width = 800,
+        plot_height = 600,
         )
 
-    p.grid.grid_line_color = None
-    #p.hover.point_policy = "follow_mouse"   
+    p.grid.grid_line_color = None  
 
     color_bar = ColorBar(color_mapper=color_mapper, location=(0,0))
     p.add_layout(color_bar, 'right')
@@ -282,6 +285,16 @@ def stacked_chart(death_types, death_list):
 
 def plot_scatter(p, x, y):
     p.scatter(x, y, size=2, line_color="navy", fill_color="orange", alpha=0.5)
+
+def linreg(x, y):
+    slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
+    r_squared = (r_value**2)
+    print(slope)
+    print(intercept)
+    print(r_squared)
+    print(p_value)
+    print(std_err)
+    return(slope, intercept, r_squared, p_value, std_err)
     
 def scatter_prep(df):
     
@@ -316,11 +329,28 @@ def scatter_prep(df):
     p = figure(title="Age victim against age perpetrator", toolbar_location=None, x_axis_label='Age victim', y_axis_label='Age perpetrator')
     p.grid.grid_line_color = None
     p.background_fill_color = "#eeeeee"
-    for i in range(500):
+    first_pairs = []
+    second_pairs = []
+    for i in range(len(all_pairs)):
+        first_pairs.append(all_pairs[i][0])
+        second_pairs.append(all_pairs[i][1])
+    #print(first_pairs)
+    #print(second_pairs)
+    slope, intercept, r_squared, p_value, std_err = linreg(first_pairs, second_pairs)
+    x_values = []
+    y_values = []
+    for i in range(100):
+        x_values.append(i)
+        y_values.append(i*slope+intercept)
+    for i in range(10000):
         random = randint(0, 49511)
         plot_scatter(p, all_pairs[random][0], all_pairs[random][1])
-    show(p)
+    p.line(x_values, y_values, line_width=2)
     output_file("scatterplot.html")
+    show(p)
+    
+
+
 
 if __name__ == "__main__":
     main()
