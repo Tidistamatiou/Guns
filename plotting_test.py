@@ -10,29 +10,29 @@ from bokeh.plotting import figure, ColumnDataSource
 from bokeh.sampledata.us_states import data as us_states
 from bokeh.core.properties import value
 from bokeh.embed import components
+from bokeh.layouts import row
 from random import randint
-from bokeh.models import LinearColorMapper, ColorBar, HoverTool
+from bokeh.models import LinearColorMapper, ColorBar, HoverTool, Legend
 from scipy import stats
 import itertools
 from itertools import islice
-
-
 
 def main():
     df = pd.read_csv('stripped2_guns.csv')
     pdf = pd.read_csv('participants_untangled_v3.csv')
     states_df = pd.read_csv('populations_stats.csv')
-    scatter_prep(pdf)
+    #scatter_prep(pdf)
     #deaths_per_month = datum_prep(df)
     # bar(months)
-    #killed_per_state = states_data(df, states_df, 'state', 'n_killed')
-    #plot_states(killed_per_state)
+    killed_per_state = states_data(df, states_df, 'state', 'n_killed')
+    states = plot_states(killed_per_state)
     #killed = killed_prep(df)
     #histogram(killed)
-    #types, total_month_list_p = death_types(df, "date", "incident_characteristics")
-    #types, death_type_state = death_types(df, "state", "incident_characteristics")        
+    types, total_month_list_p = death_types(df, "date", "incident_characteristics")
+    types, death_type_state = death_types(df, "state", "incident_characteristics")        
     #ages_df = pd.read_csv('part_ages.csv')
-    #stacked_chart(types, total_month_list_p)
+    stacked = stacked_chart(types, total_month_list_p)
+    plot(stacked, states)
 
 def datum_prep(df):
     # convert date to right format
@@ -72,8 +72,6 @@ def states_data(df, df_states, column, column1):
         relative_list.append(relative_n_killed)
     relative_state_dict = dict(zip(state_names, relative_list))
     
-
-
     # relatieve waarde
     return(relative_state_dict)
 
@@ -143,6 +141,7 @@ def plot_states(state_dict):
     
 
     show(p)
+    return(p)
 
 def killed_prep(df):
     killed = df['n_killed'].value_counts()
@@ -275,13 +274,14 @@ def stacked_chart(death_types, death_list):
     p.xgrid.grid_line_color = None
     p.axis.minor_tick_line_color = None
     p.outline_line_color = None
-    #p.legend.location = "top_right"
-    #p.legend.orientation = "horizontal"
+    p.legend.location = "top_right"
+    p.legend.orientation = "horizontal"
 
     legend = Legend(items=[(death, [r]) for (death, r) in zip(death_types, rs)], location=(0, 30))
     p.add_layout(legend, 'right')
 
     show(p)
+    return(p)
 
 def plot_scatter(p, x, y):
     p.scatter(x, y, size=2, line_color="navy", fill_color="orange", alpha=0.5)
@@ -348,9 +348,10 @@ def scatter_prep(df):
     p.line(x_values, y_values, line_width=2)
     output_file("scatterplot.html")
     show(p)
+
+def plot(stacked, states):
+    output_file("plot.html")
+    show(row(stacked, states))
     
-
-
-
 if __name__ == "__main__":
     main()
