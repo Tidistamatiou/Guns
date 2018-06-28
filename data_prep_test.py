@@ -9,8 +9,8 @@ from itertools import islice
 def main():
     dtypes = {'city_or_county': object, 'participant_age': object, 'participant_gender' : object, 'participant_status' : object, 'participant_type' : object}
     # df = pd.read_csv('guns.csv')
-    ndf = pd.read_csv('stripped2_guns.csv', dtype = dtypes)
-    pdf = pd.read_csv('participants_untangled_v3.csv')
+    #ndf = pd.read_csv('stripped2_guns.csv', dtype = dtypes)
+    #pdf = pd.read_csv('participants_untangled_v3.csv')
     # remove(ndf)
     # sufficient_data(ndf, "state")
     # string_to_int(ndf, "city_or_county")
@@ -21,13 +21,15 @@ def main():
     # list = participant_untangle(ndf, 'participant_age', 'participant_gender', 'participant_type')
     # list_to_csv(list)
     # get_part_info(pdf)
-    total = merge(pdf, ndf, "incident_characteristics")
+    #total = merge(pdf, ndf, "incident_characteristics")
 
+# print headers van elke kolom
 def header(csv_file):
     headers = pd.read_csv(csv_file, nrows = 1).columns
     for i in range(20):
         print(headers[i])
 
+# zet string in kolom om naar id 
 def string_to_int(df, column):
     dict = {} 
     counter = 0
@@ -38,6 +40,7 @@ def string_to_int(df, column):
             counter+=1
     save_dic(dict, column)
 
+# zet int_dict om tot csv file
 def dict_to_csv(df, column):
     # haal correcte dict op
     with open(column+"_dict.txt") as file:
@@ -52,6 +55,7 @@ def dict_to_csv(df, column):
     df = pd.DataFrame.merge(df, df_column, how = 'left', left_on = column, right_on= None , right_index=True )
     df.to_csv("stripped2_guns.csv", index = False)
 
+# data_prep voor gender info per incident type
 def merge(df1, df2, column):
     char_df = pd.DataFrame(df2[column])
     df = char_df.join(df1)
@@ -61,6 +65,7 @@ def merge(df1, df2, column):
         df_ = df[df[column].str.contains(word, na = False)] 
         l = get_gender_info(df_)
         total_list.append(l)
+    return(total_list)
 
     total_gender_list = []
     for i in range(len(total_list[0])):
@@ -73,9 +78,9 @@ def merge(df1, df2, column):
         for l in total_list:
             l[i] /= total_gender_list[i]
             l[i] = round(l[i], 3)
-    return(total_list)
+    #return(total_list)
     
-
+# zet participants untangled om naar csv
 def list_to_csv(list):
     df = pd.DataFrame(list)
     order = []
@@ -90,6 +95,7 @@ def save_dic(dictionary, column):
     with open(column+"_dict.txt", 'w') as file:
         file.write(json.dumps(dictionary))
 
+# check of er genoeg data beschikbaar is
 def sufficient_data(df, column):
     counter_row = 0
     row_count = df.count(axis=0)
@@ -105,6 +111,7 @@ def remove(df):
     df = df[keep_col]
     df.to_csv('stripped2_guns.csv')
 
+# zet data betreffende participant om in goed format
 def participant_untangle(df, column1, column2, column3):
     list1 = []
     n = len(open("stripped2_guns.csv").readlines())
@@ -158,6 +165,7 @@ def participant_untangle(df, column1, column2, column3):
             print(i)
     return(list1)
 
+# haal benodigde info voor participants op
 def get_part_info(df):   
     age_list = []
     age_list_victim = []
@@ -188,6 +196,7 @@ def get_part_info(df):
     victim_df.to_csv("victim_ages.csv")
     perp_df.to_csv("perp_ages.csv")
 
+# haal gender info voor participants op
 def get_gender_info(df):   
     male_victim_count = 0
     female_victim_count = 0
