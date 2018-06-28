@@ -14,7 +14,7 @@ from bokeh.embed import components
 from bokeh.layouts import row
 from random import randint
 from bokeh.models import LinearColorMapper, ColorBar, HoverTool, Legend
-from scipy import stats
+#from scipy import stats
 from bokeh.models import LinearColorMapper, ColorBar, HoverTool, NumeralTickFormatter, Legend
 import itertools
 from itertools import islice
@@ -28,22 +28,20 @@ def main():
     #deaths_per_month = datum_prep(df)
     #bar(deaths_per_month)
     #killed_per_state = states_data(df, states_df, 'state', 'n_killed')
-    #states = plot_states(killed_per_state)
+    #types, death_type_state = death_types(df, "state", "incident_characteristics")   
+    #states = plot_states(killed_per_state, death_type_state)
     #killed = killed_prep(df)
     #histogram(killed)
-    #death_list1 = dpt.merge(pdf, df, "incident_characteristics")
-    #types, total_month_list_p = death_types(df, "date", "incident_characteristics")
-    #types, death_type_state = death_types(df, "state", "incident_characteristics")       
-    #stacked_chart(types, total_month_list_p)
     #high_state_bars(types, death_type_state, killed_per_state)
     #low_state_bars(types, death_type_state, killed_per_state)
-    #outliers(types, death_type_state)
-    #types, total_month_list_p = death_types(df, "date", "incident_characteristics")
-    #types, death_type_state = death_types(df, "state", "incident_characteristics")        
-    #ages_df = pd.read_csv('part_ages.csv')
+    death_list1 = dpt.merge(pdf, df, "incident_characteristics")
+    types, total_month_list_p = death_types(df, "date", "incident_characteristics")
+    stacked_chart(types, death_list1)
+    #state_bars(types, death_type_state)  
     #stacked_chart(types, total_month_list_p)
+    #ages_df = pd.read_csv('part_ages.csv')
+    #stacked = stacked_chart(types, total_month_list_p)
     #plot(stacked, states)
-
 
 def datum_prep(df):
     # convert date to right format
@@ -86,7 +84,7 @@ def states_data(df, df_states, column, column1):
     # relatieve waarde
     return(relative_state_dict)
 
-def plot_states(state_dict):
+def plot_states(state_dict, state_types):
     palette.reverse()
     output_file("fatalities_per_state_rel.html")
     # hawaii en alaska weggehaald want dat fockte mn kaart op
@@ -100,21 +98,26 @@ def plot_states(state_dict):
     for state_name in state_names:
         amount = state_dict[state_name]
         state_fatalities.append(amount)
+    state_killer = []
+    for state_name in state_names:
+        state_killer.append(max(state_types[state_name], key=state_types[state_name].get))
     color_mapper = {}
     color_mapper = LinearColorMapper(palette=palette, low = 5, high = 50)
 
-    t = sorted(zip(state_fatalities, state_lons, state_lats, state_names))
+    t = sorted(zip(state_fatalities, state_killer, state_lons, state_lats, state_names))
 
-    state_lons = [x for _, x, _, _ in t]
-    state_lats = [x for _, _, x, _ in t]
-    state_names = [x for _, _, _, x in t]
-    state_fatalities = [x for x, _, _, _ in t]
+    state_lons = [x for _, _, x, _, _ in t]
+    state_lats = [x for _, _, _, x, _ in t]
+    state_names = [x for _, _, _, _, x in t]
+    state_fatalities = [x for x, _, _, _, _ in t]
+    state_killer = [x for _, x, _, _, _ in t]
 
     data = dict(
         x = state_lons,
         y = state_lats,
         name = state_names,
-        rate = state_fatalities
+        rate = state_fatalities,
+        cause = state_killer
     )
 
     color_mapper.low_color = 'blue'
@@ -123,7 +126,7 @@ def plot_states(state_dict):
     TOOLS = "pan,wheel_zoom,reset,hover,save"
 
     p = figure(
-        title="Fatalities per 100.000 inhabitants",
+        title="Fatalities per 100,000 inhabitants",
         tools=TOOLS, 
         toolbar_location="left", x_axis_location = None, 
         y_axis_location = None,
@@ -139,7 +142,7 @@ def plot_states(state_dict):
     p.grid.grid_line_color = None
 
     hover = p.select(dict(type=HoverTool))
-    hover.tooltips = [("State", "@name"), ("Gun deaths per 100k", "@rate"), ("(Long, Lat)", "($x, $y)")]
+    hover.tooltips = [("State", "@name"), ("Gun deaths per 100k", "@rate"), ("Main cause of death:", "@cause")]
     hover.point_policy = "follow_mouse"
     p.patches(
         'x', 'y', 
@@ -195,6 +198,7 @@ def death_types(df, gb_column, column1):
         if gb_column == 'date':
             deaths_per_type = df_.groupby(df_[gb_column].dt.year)['n_killed'].agg('sum')
             death_type_list.append(deaths_per_type.values)
+
             
         # voor staten
         elif gb_column == 'state':
@@ -248,7 +252,7 @@ def stacked_chart(death_types, death_list):
         output_file("stacked_months.html")
     elif len(death_list[0]) < 6:
         x_axis_labels = ["male victim", "male suspect", 'female victim', "female suspect"]
-        output_file("stacked_gender.html")
+        output_file("stacked_gender_rel.html")
     else:
         output_file("stacked_years.html")
         x_axis_labels = ['2013', '2014', '2015', '2016', '2017', '2018']
@@ -282,6 +286,7 @@ def stacked_chart(death_types, death_list):
     p.outline_line_color = None
     p.legend.location = "top_right"
     p.legend.orientation = "horizontal"
+    p.yaxis[0].formatter = NumeralTickFormatter(format='0 %')
 
     legend = Legend(items=[(death, [r]) for (death, r) in zip(death_types, rs)], location=(0, 30))
     p.add_layout(legend, 'right')
@@ -349,24 +354,13 @@ def scatter_prep(df):
     output_file("scatterplot.html")
     show(p)
 
-def outliers(type_dict_states):
-    total_list = []
-    for death_type in types:
-        per_cause_dict = []
-        for state, cause in type_dict_states.items():
-            for key, value in type_dict_states[state].items():
-                if key == death_type:
-                    per_cause_list.append(value)
-        total_list.append(per_cause_list)
-    for l in total_list:
-        print(l)
-    df = pd.DataFrame(total_list)
 
 #Maak een stacked bar chart met type incidenten voor de 4 staten met hoogste aantal wapenincidenten
 def high_state_bars(death_types, death_type_state, states_dict):
     output_file("high_bar_state.html")
     high_low_states = ['Louisiana', 'Mississippi', 'Alabama', 'Missouri']
     all_types_list = []
+
     for word in death_types:
         type_list = []
         for state in high_low_states:
@@ -374,6 +368,7 @@ def high_state_bars(death_types, death_type_state, states_dict):
         all_types_list.append(type_list)
     
     colors = ["#2ad123", "#1b7c17", "#1518d8", "#4e50e5", "#4d71e5", "#4d9be5", "#f9ed3b", "#bc7f14", "#b74207", "#e51010", "#ff8c1a"]
+
 
     data = {'States' : high_low_states,
             death_types[0]   : all_types_list[0],

@@ -55,13 +55,26 @@ def dict_to_csv(df, column):
 def merge(df1, df2, column):
     char_df = pd.DataFrame(df2[column])
     df = char_df.join(df1)
-    keywords = ['Suicide', 'Domestic', 'School', 'Mass Shooting', 'Bar', 'House party',  'Gang', 'robbery', 'Home Invasion', ' Drive-by', 'Drug involvement']   
+    keywords = ['Suicide', 'Domestic', 'School', 'Mass Shooting', 'Bar', 'House party',  'Gang', 'robbery', 'Home Invasion', 'Drive-by', 'Drug involvement']   
     total_list = []
     for word in keywords:
         df_ = df[df[column].str.contains(word, na = False)] 
         l = get_gender_info(df_)
         total_list.append(l)
+
+    total_gender_list = []
+    for i in range(len(total_list[0])):
+        gender_list = []
+        for l in total_list:
+            gender_list.append(l[i])
+        total_gender_list.append(np.sum(gender_list))
+        
+    for i in range(len(total_list[0])):
+        for l in total_list:
+            l[i] /= total_gender_list[i]
+            l[i] = round(l[i], 3)
     return(total_list)
+    
 
 def list_to_csv(list):
     df = pd.DataFrame(list)
@@ -82,9 +95,8 @@ def sufficient_data(df, column):
     row_count = df.count(axis=0)
     for row in df[column]:
         counter_row += 1
-    print(counter_row)
     percentage = round(((row_count/counter_row)*100),2)
-    print(percentage)
+
 
 # alleen nuttige kollomen worden behouden
 # alles wat volgens def sufficient_data onder 60% is, is verwijdert
