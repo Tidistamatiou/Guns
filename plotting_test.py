@@ -434,10 +434,6 @@ def state_bars(death_types, death_type_state, states_dict):
 
     #show(p)
 
-
-
-
-
 def plot(stacked, states):
     output_file("plot.html")
     show(row(stacked, states))
