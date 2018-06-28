@@ -24,21 +24,21 @@ def main():
     pdf = pd.read_csv('participants_untangled_v3.csv')
     states_df = pd.read_csv('populations_stats.csv')
     #ages_df = pd.read_csv('part_ages.csv')
-    #scatter_prep(pdf)
+    scatter_prep(pdf)
     #deaths_per_month = datum_prep(df)
     #bar(deaths_per_month)
-    killed_per_state = states_data(df, states_df, 'state', 'n_killed')
+    #killed_per_state = states_data(df, states_df, 'state', 'n_killed')
     #states = plot_states(killed_per_state)
     #killed = killed_prep(df)
     #histogram(killed)
     #death_list1 = dpt.merge(pdf, df, "incident_characteristics")
     #types, total_month_list_p = death_types(df, "date", "incident_characteristics")
-    types, death_type_state = death_types(df, "state", "incident_characteristics")       
-    #stacked_chart(pdf, df, types, death_list1)
-    high_state_bars(types, death_type_state, killed_per_state)
-    low_state_bars(types, death_type_state, killed_per_state)
+    #types, death_type_state = death_types(df, "state", "incident_characteristics")       
+    #stacked_chart(types, total_month_list_p)
+    #high_state_bars(types, death_type_state, killed_per_state)
+    #low_state_bars(types, death_type_state, killed_per_state)
     #outliers(types, death_type_state)
-    types, total_month_list_p = death_types(df, "date", "incident_characteristics")
+    #types, total_month_list_p = death_types(df, "date", "incident_characteristics")
     #types, death_type_state = death_types(df, "state", "incident_characteristics")        
     #ages_df = pd.read_csv('part_ages.csv')
     #stacked_chart(types, total_month_list_p)
@@ -193,7 +193,7 @@ def death_types(df, gb_column, column1):
         df_ = df[df[column1].str.contains(word, na = False)] 
         # voor maand/jaar indeling 
         if gb_column == 'date':
-            deaths_per_type = df_.groupby(df_[gb_column].dt.month)['n_killed'].agg('sum')
+            deaths_per_type = df_.groupby(df_[gb_column].dt.year)['n_killed'].agg('sum')
             death_type_list.append(deaths_per_type.values)
             
         # voor staten
@@ -293,23 +293,19 @@ def plot_scatter(p, x, y):
     p.scatter(x, y, size=2, line_color="navy", fill_color="orange", alpha=0.5)
 
 # Functie voor lineaire regressie
-def linreg(all_pairs):
+def linreg(all_pair):
     first_pairs = []
     second_pairs = []
-    for i in range(len(all_pairs)):
-        first_pairs.append(all_pairs[i][0])
-        second_pairs.append(all_pairs[i][1])
-    slope, intercept, r_squared, p_value, std_err = linreg(first_pairs, second_pairs)
+    for i in range(len(all_pair)):
+        first_pairs.append(all_pair[i][0])
+        second_pairs.append(all_pair[i][1])
+    slope, intercept, r_value, p_value, std_err = stats.linregress(first_pairs, second_pairs)
     x_values = []
     y_values = []
     for i in range(100):
         x_values.append(i)
         y_values.append(i*slope+intercept)
-    for i in range(10000):
-        random = randint(0, 49511)
-        plot_scatter(p, all_pairs[random][0], all_pairs[random][1])
-    p.line(x_values, y_values, line_width=2)
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
+    #p.line(x_values, y_values, line_width=2)
     r_squared = (r_value**2)
     return(slope, intercept, r_squared, p_value, std_err)
     
@@ -345,6 +341,9 @@ def scatter_prep(df):
     p = figure(title="Age victim against age perpetrator", toolbar_location=None, x_axis_label='Age victim', y_axis_label='Age perpetrator')
     p.grid.grid_line_color = None
     p.background_fill_color = "#eeeeee"
+    for i in range(10000):
+        random = randint(0, 49511)
+        plot_scatter(p, all_pairs[random][0], all_pairs[random][1])
     slope, intercept, r_squared, p_value, std_err = linreg(all_pairs)
     print(slope, intercept, r_squared, p_value, std_err)
     output_file("scatterplot.html")
