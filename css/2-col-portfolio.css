@@ -1,0 +1,30 @@
+body {
+	margin-top: 50px; /* 50px is the height of the navbar - change this if the navbarn height changes */
+	background-color: #B7D2E3;
+	
+}
+#states {
+	height: 260px;
+	width: 400px;
+}
+
+.portfolio-item {
+	margin-bottom: 25px;
+}
+#relative {
+	width: 50%;
+	height: 50%;
+}
+
+#img2 {
+	height: 255px;
+}
+#img4 {
+	height: 212px;
+} 
+#img6 {
+	height: 255px;
+}
+footer {
+	margin: 50px 0;
+}

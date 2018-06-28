@@ -10,8 +10,9 @@ from bokeh.io import output_file, show
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.sampledata.us_states import data as us_states
 from bokeh.core.properties import value
-from bokeh.embed import components
-from bokeh.layouts import row
+from bokeh.embed import components, file_html
+from bokeh.resources import CDN
+from bokeh.layouts import row, gridplot
 from random import randint
 from bokeh.models import LinearColorMapper, ColorBar, HoverTool, Legend, NumeralTickFormatter
 from scipy import stats
@@ -19,6 +20,7 @@ import itertools
 from itertools import islice
 
 def main():
+    months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Juni', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
     df = pd.read_csv('stripped2_guns.csv')
     pdf = pd.read_csv('participants_untangled_v3.csv')
     states_df = pd.read_csv('populations_stats.csv')
@@ -37,7 +39,6 @@ def main():
     #types, total_month_list_p = death_types(df, "date", "incident_characteristics")
     #stacked_chart(types, death_list1)
     #stacked = stacked_chart(types, total_month_list_p)
-    #plot(stacked, states)
 
 def datum_prep(df):
     # convert date to right format
@@ -51,7 +52,7 @@ def datum_prep(df):
 def bar(values):
     output_file("bars_years.html")
 
-    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Juni', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
     years = ['2013', '2014','2015', '2016', '2017', '2018']
     p = figure(x_range=months, plot_height=250, title="Deaths per year")
     p.vbar(x=months, top=values, width=0.9)
@@ -151,8 +152,6 @@ def plot_states(state_dict, state_types):
         line_color="white", line_width=0.5, line_alpha=0.3,
         )
     
-
-    show(p)
     return(p)
 
 # data_prep voor incidenten gecategoriseerd per dodenaantal
@@ -185,7 +184,7 @@ def histogram(killed):
     p.xgrid.grid_line_color = None
     p.y_range.start = 0
 
-    show(p)
+    #show(p)
 
 # data_prep voor dodenaantal gecategoriseerd per incident type en staat/maand/jaar
 def death_types(df, gb_column, column1): 
@@ -295,7 +294,7 @@ def stacked_chart(death_types, death_list):
     legend = Legend(items=[(death, [r]) for (death, r) in zip(death_types, rs)], location=(0, 30))
     p.add_layout(legend, 'right')
 
-    show(p)
+    #show(p)
     return(p)
 
 # plot scatterplot
@@ -358,7 +357,8 @@ def scatter_prep(df):
     slope, intercept, r_squared, p_value, std_err = linreg(all_pairs)
     print(slope, intercept, r_squared, p_value, std_err)
     output_file("scatterplot.html")
-    show(p)
+    #show(p)
+    return(p)
 
 
 # Maak een stacked bar chart met type incidenten voor de 4 staten met hoogste aantal wapenincidenten
@@ -406,7 +406,7 @@ def high_state_bars(death_types, death_type_state, states_dict):
     p.xaxis.major_label_orientation = "vertical"
     p.yaxis[0].formatter = NumeralTickFormatter(format='0 %')
 
-    show(p)
+    #show(p)
 
 # Maak een stacked bar chart met type incidenten voor de 4 staten met laagste aantal wapenincidenten
 def low_state_bars(death_types, death_type_state, states_dict):
@@ -454,11 +454,8 @@ def low_state_bars(death_types, death_type_state, states_dict):
     legend = Legend(items=[(death, [r]) for (death, r) in zip(death_types, rs)], location=(0, 30))
     p.add_layout(legend, 'right')
 
-    show(p)
-
-def plot(stacked, states):
-    output_file("plot.html")
-    show(row(stacked, states))
+    #show(p)
+    
     
 if __name__ == "__main__":
     main()

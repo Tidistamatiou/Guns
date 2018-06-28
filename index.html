@@ -1,37 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>Bokeh Scatter Plots</title>
 
-        <link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-0.12.6.min.css" type="text/css" />
-        <script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-0.12.6.min.js"></script>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
 
-        <script type="text/javascript">
-            var docs_json = { DOCUMENT DATA HERE }
-            var render_items = [{
-              "docid":"33961aa6-fd96-4055-886f-b2afec7ff193",
-              "elementid":"e89297cf-a2dc-4edd-8993-e16f0ca6af04",
-              "modelid":"4eff3fdb-80f4-4b4c-a592-f99911e14398"
-            },{
-              "docid":"33961aa6-fd96-4055-886f-b2afec7ff193",
-              "elementid":"eeb9a417-02a1-47e3-ab82-221abe8a1644",
-              "modelid":"0e5ccbaf-62af-42cc-98de-7c597d83747a"
-            },{
-              "docid":"33961aa6-fd96-4055-886f-b2afec7ff193",
-              "elementid":"c311f123-368f-43ba-88b6-4e3ecd9aed94",
-              "modelid":"57f18497-9598-4c70-a251-6072baf223ff"
-            }];
-        
-            Bokeh.embed.embed_items(docs_json, render_items);
-        </script>
+    <title>Two Column Portfolio Template for Bootstrap 3</title>
 
-    </head>
-    <body>
-        {
-            'Green': '\n<div class="bk-root" id="e89297cf-a2dc-4edd-8993-e16f0ca6af04"></div>',
-            'Blue': '\n<div class="bk-root" id="eeb9a417-02a1-47e3-ab82-221abe8a1644"></div>',
-            'Red': '\n<div class="bk-root" id="c311f123-368f-43ba-88b6-4e3ecd9aed94"></div>'
-        }
-    </body>
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+
+    <!-- Custom CSS for the 'Thumbnail Gallery' Template -->
+    <link href="css/2-col-portfolio.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="row">
+
+            <div class="col-lg-12">
+                <h1 class="page-header">Meer wapens meer onnodige incidenten <br>
+                    <small>Max Akkers, Myrthe Oude Ophuis, Paul Schmidt en Tidi Stamatiou <br>
+                        Mensen bezitten een wapen om een misdaad te voorkomen.
+                        Echter in maar 1% van de gevallen is dit daadwerkelijk het geval</small>
+                </h1>
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-lg-6 col-md-6 portfolio-item">
+                <a href="fatalities_per_state_rel.html">
+                    <img class="states" id="states" src="pics/states.jpeg">
+                </a>
+                <h3><a href="fatalities_per_state_rel.html">Tabel 1</a>
+                </h3>
+                <p>Weergave van het aantal incidenten per staat met een continue kleurenspectrum. 
+                    Dit is veel preciezer waardoor ook kleine verschillen van 
+                    bijvoorbeeld 1 dode per 100.000 inwoners meer zichtbaar zijn voor de kijker.</p>
+            </div>
+
+            <div class="col-lg-6 col-md-6 portfolio-item">
+                <a href="stacked_months.html">
+                    <img class="img-responsive" id="img2" src="pics/months.jpeg">
+                </a>
+                <h3><a href="stacked_months.html">Tabel 2</a>
+                </h3>
+                <p>Totaal overzicht van het gehele land van de verschillende oorzaken van doden door wapens per maand.</p>
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-lg-6 col-md-6 portfolio-item">
+                <a href="high_bar_state.html">
+                    <img class="img-responsive" src="pics/high.jpeg">
+                </a>
+                <h3><a href="high_bar_state.html">Tabel 3</a>
+                </h3>
+                <p>Overzicht van de oorzaken van incidenten in vier staten waar het meeste aantal incidenten plaatsvinden.</p>
+            </div>
+
+            <div class="col-lg-6 col-md-6 portfolio-item">
+                <a href="low_bar_state.html">
+                    <img class="img-responsive" id="img4" src="pics/low.jpeg">
+                </a>
+                <h3><a href="low_bar_state.html">Tabel 4</a>
+                </h3>
+                <p>Overzicht van de oorzaken van incidenten in de vier staten waar het minste aantal wapenincidenten plaatsvinden.</p>
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-lg-6 col-md-6 portfolio-item">
+                <a href="scatterplot.html">
+                    <img class="img-responsive" src="pics/scatter.jpeg">
+                </a>
+                <h3><a href="scatterplot.html">Tabel 5</a>
+                </h3>
+                <p>Een scatterplot van de leeftijd van de daders uitgezet tegen de leeftijd van de slachtoffers van deze daders.</p>
+            </div>
+
+            <div class="col-lg-6 col-md-6 portfolio-item">
+                <a href="stacked_gender.html">
+                    <img class="img-responsive" id="img6" src="pics/male-female.jpeg">
+                </a>
+                <h3><a href="stacked_gender.html">Tabel 6</a>
+                </h3>
+                <p>De absolute verhouding tussen mannen en vrouwen als victim en suspect en de verdeling van het type incident per geslacht. </p>
+            </div>
+
+        </div>
+        <div class="col-lg-6 col-md-6 portfolio-item">
+                <a href="stacked_gender_rel.html">
+                    <img class="img-relative" id="relative" src="pics/gender-relative.jpeg">
+                </a>
+                <h3><a href="stacked_gender_rel.html">Tabel 7</a>
+                </h3>
+                <p>De relatieve verhouding tussen mannen en vrouwen als victim en suspect en de verdeling van het type incident per geslacht. </p>
+            </div>
+
+        </div>
+    </div>
+    <!-- /.container -->
+
+    <!-- JavaScript -->
+    <script src="js/jquery-1.10.2.js"></script>
+    <script src="js/bootstrap.js"></script>
+
+</body>
+
 </html>
