@@ -10,7 +10,11 @@ from bokeh.io import output_file, show
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.sampledata.us_states import data as us_states
 from bokeh.core.properties import value
+from bokeh.embed import components
+from bokeh.layouts import row
 from random import randint
+from bokeh.models import LinearColorMapper, ColorBar, HoverTool, Legend
+from scipy import stats
 from bokeh.models import LinearColorMapper, ColorBar, HoverTool, NumeralTickFormatter, Legend
 import itertools
 from itertools import islice
@@ -24,7 +28,7 @@ def main():
     #deaths_per_month = datum_prep(df)
     #bar(deaths_per_month)
     killed_per_state = states_data(df, states_df, 'state', 'n_killed')
-    #plot_states(killed_per_state)
+    states = plot_states(killed_per_state)
     #killed = killed_prep(df)
     #histogram(killed)
     #death_list1 = dpt.merge(pdf, df, "incident_characteristics")
@@ -33,6 +37,11 @@ def main():
     #stacked_chart(pdf, df, types, death_list1)
     state_bars(types, death_type_state, killed_per_state)
     #outliers(types, death_type_state)
+    types, total_month_list_p = death_types(df, "date", "incident_characteristics")
+    types, death_type_state = death_types(df, "state", "incident_characteristics")        
+    #ages_df = pd.read_csv('part_ages.csv')
+    stacked = stacked_chart(types, total_month_list_p)
+    plot(stacked, states)
 
 
 def datum_prep(df):
@@ -117,6 +126,8 @@ def plot_states(state_dict):
         tools=TOOLS, 
         toolbar_location="left", x_axis_location = None, 
         y_axis_location = None,
+        plot_width = 800,
+        plot_height = 600,
         )
 
     p.grid.grid_line_color = None 
@@ -139,6 +150,7 @@ def plot_states(state_dict):
     
 
     show(p)
+    return(p)
 
 def killed_prep(df):
     killed = df['n_killed'].value_counts()
@@ -267,16 +279,27 @@ def stacked_chart(df1, df2, death_types, death_list):
     p.xgrid.grid_line_color = None
     p.axis.minor_tick_line_color = None
     p.outline_line_color = None
-    #p.legend.location = "top_right"
-    #p.legend.orientation = "horizontal"
+    p.legend.location = "top_right"
+    p.legend.orientation = "horizontal"
 
     legend = Legend(items=[(death, [r]) for (death, r) in zip(death_types, rs)], location=(0, 30))
     p.add_layout(legend, 'right')
 
     show(p)
+    return(p)
 
 def plot_scatter(p, x, y):
     p.scatter(x, y, size=2, line_color="navy", fill_color="orange", alpha=0.5)
+
+def linreg(x, y):
+    slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
+    r_squared = (r_value**2)
+    print(slope)
+    print(intercept)
+    print(r_squared)
+    print(p_value)
+    print(std_err)
+    return(slope, intercept, r_squared, p_value, std_err)
     
 def scatter_prep(df):
     
@@ -312,10 +335,25 @@ def scatter_prep(df):
     p.grid.grid_line_color = None
     p.background_fill_color = "#eeeeee"
     for i in range(5000):
+    first_pairs = []
+    second_pairs = []
+    for i in range(len(all_pairs)):
+        first_pairs.append(all_pairs[i][0])
+        second_pairs.append(all_pairs[i][1])
+    #print(first_pairs)
+    #print(second_pairs)
+    slope, intercept, r_squared, p_value, std_err = linreg(first_pairs, second_pairs)
+    x_values = []
+    y_values = []
+    for i in range(100):
+        x_values.append(i)
+        y_values.append(i*slope+intercept)
+    for i in range(10000):
         random = randint(0, 49511)
         plot_scatter(p, all_pairs[random][0], all_pairs[random][1])
-    show(p)
+    p.line(x_values, y_values, line_width=2)
     output_file("scatterplot.html")
+    show(p)
 
 def outliers(type_dict_states):
     total_list = []
@@ -400,5 +438,9 @@ def state_bars(death_types, death_type_state, states_dict):
 
 
 
+def plot(stacked, states):
+    output_file("plot.html")
+    show(row(stacked, states))
+    
 if __name__ == "__main__":
     main()
