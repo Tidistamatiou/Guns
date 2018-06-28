@@ -21,6 +21,7 @@ def main():
     # list = participant_untangle(ndf, 'participant_age', 'participant_gender', 'participant_type')
     # list_to_csv(list)
     # get_part_info(pdf)
+    total = merge(pdf, ndf, "incident_characteristics")
 
 def header(csv_file):
     headers = pd.read_csv(csv_file, nrows = 1).columns
@@ -48,8 +49,19 @@ def dict_to_csv(df, column):
     # voeg id voor kolom aan df toe
     df_column = pd.DataFrame.from_dict(inv_dict_file, orient = 'index')
     df_column.rename(columns = {0:column+"_id"}, inplace = True)
-    df = pd.DataFrame.merge(df, df_column, how = 'left', left_on= column, right_on= None , right_index=True )
+    df = pd.DataFrame.merge(df, df_column, how = 'left', left_on = column, right_on= None , right_index=True )
     df.to_csv("stripped2_guns.csv", index = False)
+
+def merge(df1, df2, column):
+    char_df = pd.DataFrame(df2[column])
+    df = char_df.join(df1)
+    keywords = ['Suicide', 'Domestic', 'School', 'Mass Shooting', 'Bar', 'House party',  'Gang', 'robbery', 'Home Invasion', ' Drive-by', 'Drug involvement']   
+    total_list = []
+    for word in keywords:
+        df_ = df[df[column].str.contains(word, na = False)] 
+        l = get_gender_info(df_)
+        total_list.append(l)
+    return(total_list)
 
 def list_to_csv(list):
     df = pd.DataFrame(list)
@@ -164,38 +176,37 @@ def get_part_info(df):
     victim_df.to_csv("victim_ages.csv")
     perp_df.to_csv("perp_ages.csv")
 
-    def get_gender_info(df):   
-    gender_list_victim = []
-    gender_list_perp = []
-    
+def get_gender_info(df):   
+    male_victim_count = 0
+    female_victim_count = 0
+    male_perp_count = 0
+    female_perp_count = 0
     # loop door alle entries
     for index, row in islice(df.iterrows(), 0, None):
-        if index % 10000 == 0:
-            print(index)
         for cell in row:  
             # als Nan, volgende row 
             if pd.isna(cell):
                 break
-            cell = ast.literal_eval(cell)
             try:
+                cell = ast.literal_eval(cell)
                 if "Victim" in cell:
                     if "Male" in cell:
-                        gender_list_victim.append("male")
+                        male_victim_count += 1
                     elif "Female" in cell:
-                        gender_list_victim.append("female")
+                        female_victim_count += 1
                 elif "Subject-Suspect" in cell:
                     if "Male" in cell:
-                        gender_list_perp.append("male")
+                        male_perp_count += 1
                     elif "Female" in cell:
-                        gender_list_perp.append("female")
+                        female_perp_count += 1
             except:
                 continue
-    victim_gender_df = pd.DataFrame(gender_list_victim)
-    perp_gender_df = pd.DataFrame(gender_list_perp)
-    victim_gender_df.to_csv("victim_gender.csv")
-    perp_gender_df.to_csv("perp_gender.csv")
-
-
+    type_count_list = [male_victim_count, male_perp_count, female_victim_count, female_perp_count]
+    return(type_count_list)
+    #victim_gender_df = pd.DataFrame(gender_list_victim)
+    #perp_gender_df = pd.DataFrame(gender_list_perp)
+    #victim_gender_df.to_csv("victim_gender.csv")
+    #perp_gender_df.to_csv("perp_gender.csv")
 
 
 if __name__ == "__main__":
