@@ -292,18 +292,28 @@ def stacked_chart(death_types, death_list):
 def plot_scatter(p, x, y):
     p.scatter(x, y, size=2, line_color="navy", fill_color="orange", alpha=0.5)
 
-def linreg(x, y):
+# Functie voor lineaire regressie
+def linreg(all_pairs):
+    first_pairs = []
+    second_pairs = []
+    for i in range(len(all_pairs)):
+        first_pairs.append(all_pairs[i][0])
+        second_pairs.append(all_pairs[i][1])
+    slope, intercept, r_squared, p_value, std_err = linreg(first_pairs, second_pairs)
+    x_values = []
+    y_values = []
+    for i in range(100):
+        x_values.append(i)
+        y_values.append(i*slope+intercept)
+    for i in range(10000):
+        random = randint(0, 49511)
+        plot_scatter(p, all_pairs[random][0], all_pairs[random][1])
+    p.line(x_values, y_values, line_width=2)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
     r_squared = (r_value**2)
-    print(slope)
-    print(intercept)
-    print(r_squared)
-    print(p_value)
-    print(std_err)
     return(slope, intercept, r_squared, p_value, std_err)
     
-def scatter_prep(df):
-    
+def scatter_prep(df):  
     # lijst voor alle victim/perp paren
     all_pairs = []
     # iterate through incidents
@@ -335,23 +345,8 @@ def scatter_prep(df):
     p = figure(title="Age victim against age perpetrator", toolbar_location=None, x_axis_label='Age victim', y_axis_label='Age perpetrator')
     p.grid.grid_line_color = None
     p.background_fill_color = "#eeeeee"
-    first_pairs = []
-    second_pairs = []
-    for i in range(len(all_pairs)):
-        first_pairs.append(all_pairs[i][0])
-        second_pairs.append(all_pairs[i][1])
-    #print(first_pairs)
-    #print(second_pairs)
-    slope, intercept, r_squared, p_value, std_err = linreg(first_pairs, second_pairs)
-    x_values = []
-    y_values = []
-    for i in range(100):
-        x_values.append(i)
-        y_values.append(i*slope+intercept)
-    for i in range(10000):
-        random = randint(0, 49511)
-        plot_scatter(p, all_pairs[random][0], all_pairs[random][1])
-    p.line(x_values, y_values, line_width=2)
+    slope, intercept, r_squared, p_value, std_err = linreg(all_pairs)
+    print(slope, intercept, r_squared, p_value, std_err)
     output_file("scatterplot.html")
     show(p)
 
